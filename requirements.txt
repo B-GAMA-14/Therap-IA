@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+openai
+python-dotenv
+transformers
+torch
+sqlalchemy
+speechrecognition
+pyttsx3
+opencv-python
+mediapipe
+python-jose
+passlib

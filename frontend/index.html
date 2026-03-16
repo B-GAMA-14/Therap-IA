@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neuro-Therap | Therap-IA</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+/* ===== VARIABLES & TEMAS ===== */
+:root {
+  --primary-dark: #4a148c;
+  --primary-soft: #fdfaff;
+  --primary-border: #e1bee7;
+  --accent-purple: #8e24aa;
+  --text-main: #311b92;
+  --bg-body: #f5f5f5;
+  --sidebar-bg: #fdfaff;
+  --main-bg: #ffffff;
+  --right-bg: #fdfaff;
+  --msg-bot-bg: #f3e5f5;
+  --msg-bot-color: #4a148c;
+  --input-bg: #ffffff;
+  --input-border: #eee;
+  --text-secondary: #666;
+  --card-bg: #f9f4ff;
+  --grad1: #c9b4f0; --grad2: #b4c8f0; --grad3: #f0b4d8;
+  --transition-speed: 1.5s;
+}
+body.night {
+  --primary-soft: #1a1a2e; --primary-border: #2d2d4e;
+  --accent-purple: #ce93d8; --text-main: #e0d7f7;
+  --bg-body: #0f0f1a; --sidebar-bg: #1a1a2e;
+  --main-bg: #12121f; --right-bg: #1a1a2e;
+  --msg-bot-bg: #2d1f3d; --msg-bot-color: #e0d7f7;
+  --input-bg: #1e1e35; --input-border: #3a3a5c;
+  --text-secondary: #9e9ec4; --card-bg: #1e1e35;
+  --grad1: #2d1f3d; --grad2: #1f2d3d; --grad3: #2d1f2d;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, html {
+  height: 100%; font-family: 'Segoe UI', sans-serif;
+  background: var(--bg-body); color: var(--text-main);
+  transition: background var(--transition-speed), color var(--transition-speed);
+  overflow: hidden;
+}
+
+/* ===== FONDO LÍQUIDO GENERATIVO ===== */
+#liquid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(135deg, var(--grad1), var(--grad2), var(--grad3));
+  background-size: 400% 400%;
+  animation: liquidFlow 12s ease infinite;
+  opacity: 0.18;
+  transition: background 2s ease;
+}
+@keyframes liquidFlow {
+  0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%}
+}
+
+/* ===== ONDULACIÓN DE EMPATÍA ===== */
+.ripple-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden;
+}
+.ripple-circle {
+  position: absolute; border-radius: 50%;
+  border: 2px solid rgba(142, 36, 170, 0.4);
+  animation: rippleOut 1.8s ease-out forwards;
+}
+@keyframes rippleOut {
+  0%  { width:0; height:0; opacity:0.8; top:50%; left:50%; transform:translate(-50%,-50%); }
+  100%{ width:200vmax; height:200vmax; opacity:0; top:50%; left:50%; transform:translate(-50%,-50%); }
+}
+
+/* ===== DASHBOARD ===== */
+.dashboard {
+  display: flex; height: 100vh; width: 100vw;
+  overflow: hidden; position: relative; z-index: 1;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 240px; background: var(--sidebar-bg);
+  display: flex; flex-direction: column; padding: 20px 0;
+  border-right: 1px solid var(--primary-border);
+  transition: background var(--transition-speed), border-color var(--transition-speed);
+  z-index: 10;
+}
+.sidebar-header {
+  padding: 0 20px 20px;
+  font-size: 1.4rem; font-weight: bold;
+  color: var(--accent-purple);
+  border-bottom: 1px solid var(--primary-border);
+}
+.nav-menu { flex: 1; padding: 15px 0; }
+.nav-item {
+  padding: 11px 22px; display: flex; align-items: center; gap: 13px;
+  cursor: pointer; transition: all 0.25s ease;
+  color: var(--text-main); font-weight: 500; font-size: 0.9rem;
+  border-left: 4px solid transparent;
+}
+.nav-item:hover { background: rgba(142,36,170,0.08); color: var(--accent-purple); }
+.nav-item.active { background: rgba(142,36,170,0.12); border-left-color: var(--accent-purple); color: var(--accent-purple); }
+.nav-item i { width: 18px; text-align: center; }
+
+/* Botón modo noche */
+.night-btn {
+  margin: 10px 15px 5px;
+  padding: 10px 15px;
+  background: rgba(142,36,170,0.1);
+  border: 1px solid var(--primary-border);
+  border-radius: 25px;
+  color: var(--accent-purple);
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex; align-items: center; gap: 8px;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.night-btn:hover { background: rgba(142,36,170,0.2); }
+
+/* Botón Zen / Pausa emergencia */
+.zen-btn {
+  margin: 5px 15px 15px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, rgba(76,175,80,0.15), rgba(33,150,243,0.15));
+  border: 1px solid rgba(76,175,80,0.3);
+  border-radius: 25px;
+  color: #2e7d32;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex; align-items: center; gap: 8px;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+body.night .zen-btn { color: #81c784; border-color: rgba(129,199,132,0.3); }
+.zen-btn:hover { transform: scale(1.03); }
+
+/* ===== SECCIONES / VISTAS ===== */
+.view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.view.active { display: flex; }
+
+/* ===== MAIN CONTENT (CHAT) ===== */
+.main-content { background: var(--main-bg); transition: background var(--transition-speed); }
+
+.chat-header {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--primary-border);
+  display: flex; justify-content: space-between; align-items: center;
+  color: var(--text-secondary); font-size: 0.9rem;
+  background: var(--main-bg);
+  transition: background var(--transition-speed), border-color var(--transition-speed);
+}
+#chat-container {
+  flex: 1; padding: 22px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--main-bg);
+  transition: background var(--transition-speed);
+}
+.message {
+  max-width: 72%; padding: 11px 17px;
+  border-radius: 18px; font-size: 0.93rem; line-height: 1.55;
+  animation: fadeUp 0.3s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.bot-msg { background: var(--msg-bot-bg); color: var(--msg-bot-color); align-self: flex-start; border-bottom-left-radius: 4px; transition: background var(--transition-speed); }
+.user-msg { background: var(--accent-purple); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+
+.input-area {
+  padding: 16px 24px;
+  border-top: 1px solid var(--primary-border);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--main-bg);
+  transition: background var(--transition-speed), border-color var(--transition-speed);
+}
+.audio-btn {
+  background: var(--msg-bot-bg); border: none;
+  color: var(--accent-purple); width: 40px; height: 40px;
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: 0.3s; flex-shrink: 0;
+}
+.audio-btn:hover { filter: brightness(0.9); }
+#user-input {
+  flex: 1; padding: 11px 18px;
+  border: 1.5px solid var(--input-border);
+  border-radius: 30px; outline: none;
+  background: var(--input-bg); color: var(--text-main);
+  transition: border 0.3s, background var(--transition-speed), color var(--transition-speed);
+  font-family: inherit; font-size: 0.93rem;
+}
+#user-input:focus { border-color: var(--accent-purple); }
+
+/* Flor de loto animada */
+.send-btn {
+  background: none; border: none; cursor: pointer;
+  width: 48px; height: 48px; padding: 0;
+  display: flex; justify-content: center; align-items: center;
+  flex-shrink: 0;
+}
+.lotus-svg {
+  width: 100%; height: 100%;
+  transition: transform 0.4s ease;
+  animation: lotusBreath 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(142,36,170,0.3));
+}
+@keyframes lotusBreath {
+  0%,100%{ transform: scale(1); } 50%{ transform: scale(1.12); }
+}
+.send-btn:active .lotus-svg { transform: scale(1.3) rotate(15deg); }
+
+/* ===== PANEL DERECHO ===== */
+.right-panel {
+  width: 300px; background: var(--right-bg);
+  border-left: 1px solid var(--primary-border);
+  padding: 18px; overflow-y: auto;
+  transition: background var(--transition-speed), border-color var(--transition-speed);
+}
+.right-panel h3 { color: var(--accent-purple); margin-bottom: 14px; font-size: 0.95rem; }
+.camera-box {
+  width: 100%; aspect-ratio: 1;
+  background: var(--card-bg); border-radius: 16px;
+  overflow: hidden; border: 2px solid var(--primary-border);
+  transition: border-color var(--transition-speed);
+}
+.camera-box video { width: 100%; height: 100%; object-fit: cover; }
+
+/* Biometría: Radar canvas */
+#radarCanvas { width: 100%; margin-top: 14px; border-radius: 12px; }
+
+.biometric-item {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 8px 0; font-size: 0.85rem; color: var(--text-secondary);
+}
+.biometric-bar-bg {
+  width: 100px; height: 6px; background: var(--primary-border);
+  border-radius: 3px; overflow: hidden;
+}
+.biometric-bar-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent-purple), #ce93d8);
+  transition: width 1s ease;
+}
+.coherence-badge {
+  margin-top: 10px; padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(142,36,170,0.1), rgba(33,150,243,0.1));
+  border-radius: 10px; font-size: 0.8rem; color: var(--text-main);
+  border: 1px solid var(--primary-border); line-height: 1.5;
+}
+
+/* ===== VISTA DIARIO ===== */
+.diary-view { background: var(--main-bg); padding: 30px; overflow-y: auto; }
+.diary-view h2 { color: var(--accent-purple); margin-bottom: 20px; }
+#wordCloudCanvas {
+  width: 100%; height: 380px; border-radius: 16px;
+  background: var(--card-bg); border: 1px solid var(--primary-border);
+  cursor: crosshair;
+}
+.diary-entries { margin-top: 20px; }
+.diary-entry {
+  padding: 14px 18px; margin-bottom: 12px;
+  background: var(--card-bg); border-radius: 12px;
+  border-left: 4px solid var(--accent-purple);
+  font-size: 0.88rem; line-height: 1.6; color: var(--text-main);
+}
+.diary-entry span { font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+.word-insight {
+  margin-top: 12px; padding: 12px 16px;
+  background: rgba(142,36,170,0.08);
+  border-radius: 10px; font-size: 0.85rem; color: var(--text-main);
+  display: none; border: 1px solid var(--primary-border);
+}
+
+/* ===== VISTA PROGRESO ===== */
+.progress-view { background: var(--main-bg); padding: 30px; overflow-y: auto; }
+.progress-view h2 { color: var(--accent-purple); margin-bottom: 20px; }
+.progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.progress-card {
+  background: var(--card-bg); border-radius: 16px;
+  padding: 18px; border: 1px solid var(--primary-border);
+}
+.progress-card h4 { color: var(--accent-purple); margin-bottom: 14px; font-size: 0.9rem; }
+.wave-canvas { width: 100%; height: 80px; }
+.emotion-history { list-style: none; }
+.emotion-history li {
+  display: flex; justify-content: space-between;
+  padding: 7px 0; border-bottom: 1px solid var(--primary-border);
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+.emotion-dot {
+  width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px;
+}
+
+/* ===== VISTA CONFIGURACIÓN ===== */
+.config-view { background: var(--main-bg); padding: 30px; overflow-y: auto; }
+.config-view h2 { color: var(--accent-purple); margin-bottom: 20px; }
+.config-section {
+  background: var(--card-bg); border-radius: 14px;
+  padding: 18px; margin-bottom: 16px;
+  border: 1px solid var(--primary-border);
+}
+.config-section h4 { color: var(--text-main); margin-bottom: 14px; font-size: 0.9rem; }
+.config-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; font-size: 0.88rem; color: var(--text-secondary);
+}
+.toggle-switch {
+  width: 44px; height: 24px; background: var(--primary-border);
+  border-radius: 12px; position: relative; cursor: pointer; transition: 0.3s;
+}
+.toggle-switch.on { background: var(--accent-purple); }
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; background: white;
+  border-radius: 50%; transition: 0.3s;
+}
+.toggle-switch.on .toggle-knob { left: 23px; }
+
+/* ===== ZEN MODE (PAUSA EMERGENCIA) ===== */
+#zen-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(10,5,20,0.92);
+  backdrop-filter: blur(20px);
+  justify-content: center; align-items: center; flex-direction: column;
+  gap: 30px;
+}
+#zen-overlay.active { display: flex; }
+.zen-circle {
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(142,36,170,0.5), rgba(33,150,243,0.2));
+  border: 3px solid rgba(142,36,170,0.6);
+  animation: zenBreath 8s ease-in-out infinite;
+  display: flex; align-items: center; justify-content: center;
+}
+@keyframes zenBreath {
+  0%,100%{ transform: scale(1); box-shadow: 0 0 20px rgba(142,36,170,0.3); }
+  50%{ transform: scale(1.5); box-shadow: 0 0 60px rgba(142,36,170,0.6); }
+}
+.zen-text { color: white; font-size: 1.2rem; text-align: center; opacity: 0.85; }
+.zen-instruction { color: rgba(255,255,255,0.6); font-size: 0.9rem; }
+#zen-close {
+  padding: 10px 28px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3); color: white;
+  border-radius: 25px; cursor: pointer; font-family: inherit;
+  font-size: 0.9rem; transition: 0.3s;
+}
+#zen-close:hover { background: rgba(255,255,255,0.2); }
+
+/* Scrollbar estilizado */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--primary-border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Fondo líquido generativo -->
+<div id="liquid-bg"></div>
+
+<!-- Ondulación de empatía -->
+<div class="ripple-overlay" id="ripple-overlay"></div>
+
+<!-- ZEN MODE -->
+<div id="zen-overlay">
+  <div class="zen-circle"><span style="font-size:2.5rem">🌸</span></div>
+  <div class="zen-text" id="zen-msg">Inhala... 4 segundos</div>
+  <div class="zen-instruction">Cierra los ojos y sigue el ritmo del círculo</div>
+  <button id="zen-close" onclick="closeZen()">✕ Salir del modo pausa</button>
+</div>
+
+<div class="dashboard">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">🧠 Neuro-Therap</div>
+    <nav class="nav-menu">
+      <div class="nav-item active" onclick="showView('chat', this)"><i class="fas fa-home"></i> Inicio</div>
+      <div class="nav-item" onclick="showView('diary', this)"><i class="fas fa-book-open"></i> Mi Diario</div>
+      <div class="nav-item" onclick="showView('progress', this)"><i class="fas fa-chart-pie"></i> Progreso</div>
+      <div class="nav-item" onclick="showView('config', this)"><i class="fas fa-cog"></i> Configuración</div>
+    </nav>
+    <button class="night-btn" onclick="toggleNight()" id="nightBtn">
+      <i class="fas fa-moon"></i> <span id="nightLabel">Modo Noche</span>
+    </button>
+    <button class="zen-btn" onclick="openZen()">
+      <i class="fas fa-spa"></i> Pausa de emergencia
+    </button>
+  </aside>
+
+  <!-- VISTA CHAT -->
+  <div class="view active" id="view-chat" style="flex:1;display:flex;flex-direction:row;">
+
+    <main class="main-content view active" style="flex:1;display:flex;flex-direction:column;">
+      <div class="chat-header">
+        <span>Therap-IA · ¿Cómo te fue hoy?</span>
+        <span style="color:#4caf50;font-size:0.8rem;"><i class="fas fa-circle" style="font-size:7px;"></i> Conectado</span>
+      </div>
+      <div id="chat-container">
+        <div class="message bot-msg">Bienvenido. Tómate un momento para respirar. ¿Cómo te sientes en este instante?</div>
+      </div>
+      <div class="input-area">
+        <button class="audio-btn" onclick="startVoice()" title="Hablar"><i class="fas fa-microphone"></i></button>
+        <input type="text" id="user-input" placeholder="Comparte lo que piensas...">
+        <button class="send-btn" onclick="sendMessage()">
+          <svg class="lotus-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 90 C45 75,28 68,25 52 C22 36,38 24,50 10 C62 24,78 36,75 52 C72 68,55 75,50 90Z" stroke="#8e24aa" stroke-width="2" fill="rgba(142,36,170,0.12)"/>
+            <path d="M50 90 C55 78,82 72,88 55 C92 40,78 28,50 40 C22 28,8 40,12 55 C18 72,45 78,50 90Z" stroke="#8e24aa" stroke-width="2" fill="rgba(142,36,170,0.08)"/>
+            <path d="M50 68 C54 58,70 52,50 36 C30 52,46 58,50 68Z" stroke="#8e24aa" stroke-width="1.5" fill="rgba(142,36,170,0.2)"/>
+            <circle cx="50" cy="55" r="5" fill="#8e24aa" opacity="0.5"/>
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- PANEL DERECHO BIOMETRÍA -->
+    <aside class="right-panel">
+      <h3>📊 Análisis en tiempo real</h3>
+      <div class="camera-box">
+        <video id="video" autoplay muted playsinline></video>
+      </div>
+      <canvas id="radarCanvas" width="260" height="200"></canvas>
+      <div style="margin-top:10px;">
+        <div class="biometric-item">
+          <span>🗣 Apertura</span>
+          <div class="biometric-bar-bg"><div class="biometric-bar-fill" id="bar-apertura" style="width:30%"></div></div>
+        </div>
+        <div class="biometric-item">
+          <span>⚡ Estrés</span>
+          <div class="biometric-bar-bg"><div class="biometric-bar-fill" id="bar-estres" style="width:20%;background:linear-gradient(90deg,#e53935,#ef9a9a)"></div></div>
+        </div>
+        <div class="biometric-item">
+          <span>🎯 Enfoque</span>
+          <div class="biometric-bar-bg"><div class="biometric-bar-fill" id="bar-enfoque" style="width:60%"></div></div>
+        </div>
+      </div>
+      <div class="coherence-badge" id="coherence-badge">
+        💡 Empieza a contarme cómo te sientes para ver tu análisis.
+      </div>
+    </aside>
+  </div>
+
+  <!-- VISTA DIARIO -->
+  <div class="view" id="view-diary" style="flex:1;">
+    <div class="diary-view" style="flex:1;display:flex;flex-direction:column;">
+      <h2>📓 Mi Diario de Pensamientos</h2>
+      <canvas id="wordCloudCanvas"></canvas>
+      <div class="word-insight" id="wordInsight"></div>
+      <div class="diary-entries" id="diaryEntries">
+        <p style="color:var(--text-secondary);font-size:0.88rem;">Tus entradas del diario aparecerán aquí conforme hables con Therap-IA.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA PROGRESO -->
+  <div class="view" id="view-progress" style="flex:1;">
+    <div class="progress-view" style="flex:1;">
+      <h2>📈 Mi Progreso Emocional</h2>
+      <div class="progress-grid">
+        <div class="progress-card">
+          <h4>🌊 Actividad emocional</h4>
+          <canvas class="wave-canvas" id="waveCanvas"></canvas>
+        </div>
+        <div class="progress-card">
+          <h4>🎭 Emociones detectadas</h4>
+          <ul class="emotion-history" id="emotionList">
+            <li><span><span class="emotion-dot" style="background:#8e24aa"></span>Neutral</span><span>—</span></li>
+          </ul>
+        </div>
+        <div class="progress-card" style="grid-column:span 2;">
+          <h4>📅 Resumen de sesión</h4>
+          <div id="sessionSummary" style="font-size:0.88rem;color:var(--text-secondary);line-height:1.7;">
+            Aún no hay sesión activa. Comienza a hablar con Therap-IA para generar tu resumen.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA CONFIGURACIÓN -->
+  <div class="view" id="view-config" style="flex:1;">
+    <div class="config-view" style="flex:1;">
+      <h2>⚙️ Configuración</h2>
+      <div class="config-section">
+        <h4>Apariencia</h4>
+        <div class="config-row">
+          <span>Modo noche</span>
+          <div class="toggle-switch" id="nightToggle" onclick="toggleNight()"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="config-row">
+          <span>Fondo líquido animado</span>
+          <div class="toggle-switch on" id="bgToggle" onclick="toggleLiquidBg(this)"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+      <div class="config-section">
+        <h4>Sesión</h4>
+        <div class="config-row"><span>Usuario</span><span style="color:var(--accent-purple)">usuario_demo</span></div>
+        <div class="config-row"><span>Mensajes hoy</span><span id="msgCount" style="color:var(--accent-purple)">0</span></div>
+        <div class="config-row"><span>Emoción predominante</span><span id="dominantEmotion" style="color:var(--accent-purple)">—</span></div>
+      </div>
+      <div class="config-section">
+        <h4>Sonido Zen</h4>
+        <div class="config-row">
+          <span>Lluvia de fondo en modo Zen</span>
+          <div class="toggle-switch on" id="soundToggle" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end dashboard -->
+
+<script>
+// ===== ESTADO GLOBAL =====
+const backend = "http://127.0.0.1:8000";
+let nightMode = false;
+let messageCount = 0;
+let emotionHistory = [];
+let wordFrequency = {};
+let sessionEmotions = [];
+let audioCtx = null;
+let rainNodes = [];
+
+// ===== NAVEGACIÓN ENTRE VISTAS =====
+function showView(viewName, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const target = document.getElementById('view-' + viewName);
+  if (target) target.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  if (viewName === 'diary') renderWordCloud();
+  if (viewName === 'progress') renderWave();
+}
+
+// ===== MODO NOCHE =====
+function toggleNight() {
+  nightMode = !nightMode;
+  document.body.classList.toggle('night', nightMode);
+  const btn = document.getElementById('nightBtn');
+  const label = document.getElementById('nightLabel');
+  const toggle = document.getElementById('nightToggle');
+  if (nightMode) {
+    btn.innerHTML = '<i class="fas fa-sun"></i> <span>Modo Día</span>';
+    label && (label.textContent = 'Modo Día');
+    toggle && toggle.classList.add('on');
+  } else {
+    btn.innerHTML = '<i class="fas fa-moon"></i> <span>Modo Noche</span>';
+    toggle && toggle.classList.remove('on');
+  }
+  drawRadar();
+}
+
+function toggleLiquidBg(el) {
+  el.classList.toggle('on');
+  document.getElementById('liquid-bg').style.opacity = el.classList.contains('on') ? '0.18' : '0';
+}
+
+// ===== FONDO LÍQUIDO SEGÚN EMOCIÓN =====
+const emotionGradients = {
+  anxiety:  { g1:'#1a3a2a', g2:'#0d2233', g3:'#1a2a3a' },
+  sadness:  { g1:'#f0c070', g2:'#e8a060', g3:'#f0d0a0' },
+  anger:    { g1:'#3a1515', g2:'#2a1010', g3:'#3a2020' },
+  joy:      { g1:'#b4f0b4', g2:'#f0f0b4', g3:'#b4d8f0' },
+  neutral:  { g1:'#c9b4f0', g2:'#b4c8f0', g3:'#f0b4d8' },
+  fear:     { g1:'#2a2a3a', g2:'#1a1a2a', g3:'#3a2a3a' },
+};
+function updateLiquidBg(emotion) {
+  const map = { anxiety:'anxiety', tristeza:'sadness', sadness:'sadness',
+    enojo:'anger', anger:'anger', alegría:'joy', joy:'joy',
+    miedo:'fear', fear:'fear', neutral:'neutral' };
+  const key = map[emotion?.toLowerCase()] || 'neutral';
+  const g = emotionGradients[key];
+  const bg = document.getElementById('liquid-bg');
+  bg.style.setProperty('--grad1', g.g1);
+  bg.style.setProperty('--grad2', g.g2);
+  bg.style.setProperty('--grad3', g.g3);
+  bg.style.background = `linear-gradient(135deg, ${g.g1}, ${g.g2}, ${g.g3})`;
+  bg.style.backgroundSize = '400% 400%';
+  const speed = (key === 'anxiety') ? '18s' : (key === 'sadness') ? '15s' : '10s';
+  bg.style.animationDuration = speed;
+}
+
+// ===== ONDULACIÓN DE EMPATÍA =====
+function triggerRipple() {
+  const overlay = document.getElementById('ripple-overlay');
+  const circle = document.createElement('div');
+  circle.className = 'ripple-circle';
+  overlay.appendChild(circle);
+  setTimeout(() => circle.remove(), 1900);
+}
+
+// ===== CHAT =====
+document.getElementById('user-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+function addMessage(text, type) {
+  const container = document.getElementById('chat-container');
+  const div = document.createElement('div');
+  div.className = 'message ' + (type === 'user' ? 'user-msg' : 'bot-msg');
+  div.innerText = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage(text, 'user');
+  input.value = '';
+  messageCount++;
+  document.getElementById('msgCount').textContent = messageCount;
+
+  // Registrar palabras para el diario
+  trackWords(text);
+
+  // Indicador typing
+  const typing = addMessage('Therap-IA está escribiendo...', 'bot');
+  typing.style.opacity = '0.5';
+  typing.style.fontStyle = 'italic';
+
+  try {
+    const res = await fetch(backend + '/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: 'usuario_demo', message: text})
+    });
+    const data = await res.json();
+    typing.remove();
+    addMessage(data.response || 'No pude generar una respuesta.', 'bot');
+    triggerRipple();
+    saveDiaryEntry(text);
+    updateBiometrics(text);
+
+    // Detectar emoción
+    try {
+      const eRes = await fetch(backend + '/emotion', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text})
+      });
+      const eData = await eRes.json();
+      if (eData.emotion) {
+        updateLiquidBg(eData.emotion);
+        trackEmotion(eData.emotion);
+      }
+    } catch(_) {}
+
+  } catch(e) {
+    typing.remove();
+    addMessage('No pude conectarme con el servidor.', 'bot');
+  }
+}
+
+// ===== BIOMETRÍA EMOCIONAL =====
+function updateBiometrics(text) {
+  const words = text.split(' ').length;
+  const apertura = Math.min(100, (messageCount / 15) * 100);
+  const stress = text.match(/ansied|estres|agobio|miedo|pánico|mal|horrible|terrible/gi)
+    ? Math.min(100, 30 + words * 3) : Math.max(10, 30 - words);
+  const enfoque = Math.min(100, 40 + words * 2);
+
+  document.getElementById('bar-apertura').style.width = apertura + '%';
+  document.getElementById('bar-estres').style.width = stress + '%';
+  document.getElementById('bar-enfoque').style.width = enfoque + '%';
+
+  const badge = document.getElementById('coherence-badge');
+  if (messageCount >= 3) {
+    badge.textContent = `💡 Llevas ${messageCount} mensajes hoy. Cada palabra que compartes es un paso hacia ti mismo.`;
+  }
+  if (messageCount >= 7) {
+    badge.textContent = `🌟 Sesión profunda activa. Has logrado expresar emociones que quizás tenías guardadas.`;
+  }
+
+  drawRadar(apertura, stress, enfoque);
+}
+
+// ===== RADAR CHART =====
+function drawRadar(apertura=30, estres=20, enfoque=60) {
+  const canvas = document.getElementById('radarCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, r = Math.min(W,H)/2 - 20;
+  ctx.clearRect(0,0,W,H);
+
+  const isDark = nightMode;
+  const gridColor = isDark ? 'rgba(200,150,255,0.15)' : 'rgba(142,36,170,0.12)';
+  const labelColor = isDark ? '#ce93d8' : '#8e24aa';
+
+  // Rejillas
+  for (let i=1; i<=4; i++) {
+    ctx.beginPath();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    const pr = r * (i/4);
+    for (let a=0; a<3; a++) {
+      const angle = (a*(2*Math.PI/3)) - Math.PI/2;
+      const x = cx + pr*Math.cos(angle), y = cy + pr*Math.sin(angle);
+      a===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath(); ctx.stroke();
+  }
+
+  // Ejes
+  const labels = ['Apertura','Estrés','Enfoque'];
+  const values = [apertura/100, estres/100, enfoque/100];
+  const colors = ['rgba(142,36,170,0.7)','rgba(229,57,53,0.7)','rgba(33,150,243,0.7)'];
+
+  labels.forEach((lbl, i) => {
+    const angle = (i*(2*Math.PI/3)) - Math.PI/2;
+    ctx.beginPath();
+    ctx.strokeStyle = gridColor;
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r*Math.cos(angle), cy + r*Math.sin(angle));
+    ctx.stroke();
+    ctx.fillStyle = labelColor;
+    ctx.font = '11px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText(lbl, cx + (r+16)*Math.cos(angle), cy + (r+16)*Math.sin(angle));
+  });
+
+  // Polígono de datos
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const angle = (i*(2*Math.PI/3)) - Math.PI/2;
+    const x = cx + r*v*Math.cos(angle), y = cy + r*v*Math.sin(angle);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(142,36,170,0.18)';
+  ctx.fill();
+  ctx.strokeStyle = '#8e24aa';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Puntos
+  values.forEach((v, i) => {
+    const angle = (i*(2*Math.PI/3)) - Math.PI/2;
+    ctx.beginPath();
+    ctx.arc(cx+r*v*Math.cos(angle), cy+r*v*Math.sin(angle), 5, 0, Math.PI*2);
+    ctx.fillStyle = colors[i]; ctx.fill();
+  });
+}
+
+// ===== SEGUIMIENTO DE EMOCIONES =====
+function trackEmotion(emotion) {
+  sessionEmotions.push(emotion);
+  const counts = {};
+  sessionEmotions.forEach(e => counts[e] = (counts[e]||0) + 1);
+  const dominant = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0];
+  document.getElementById('dominantEmotion').textContent = dominant || '—';
+
+  const list = document.getElementById('emotionList');
+  const colorMap = { neutral:'#8e24aa', joy:'#4caf50', sadness:'#2196f3',
+    anger:'#f44336', fear:'#9c27b0', anxiety:'#ff9800', disgust:'#795548' };
+  const li = document.createElement('li');
+  const now = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+  li.innerHTML = `<span><span class="emotion-dot" style="background:${colorMap[emotion]||'#8e24aa'}"></span>${emotion}</span><span>${now}</span>`;
+  list.insertBefore(li, list.firstChild);
+}
+
+// ===== DIARIO & NUBE DE PALABRAS =====
+const stopWords = new Set(['de','la','el','en','que','y','a','los','se','del','las','un','una','con','es','por','al','lo','como','más','o','pero','sus','me','si','ya','también','hasta','hay','porque','muy','sin','sobre','entre','cuando','todo','esta','mi','te','le','no','son','están','fue','ser','uno','qué','cómo','estar','bien','hoy']);
+
+function trackWords(text) {
+  text.toLowerCase().split(/\s+/).forEach(w => {
+    w = w.replace(/[^a-záéíóúñü]/g,'');
+    if (w.length > 3 && !stopWords.has(w)) {
+      wordFrequency[w] = (wordFrequency[w] || 0) + 1;
+    }
+  });
+}
+
+function saveDiaryEntry(text) {
+  const container = document.getElementById('diaryEntries');
+  const first = container.querySelector('p');
+  if (first) first.remove();
+  const entry = document.createElement('div');
+  entry.className = 'diary-entry';
+  const now = new Date().toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'});
+  entry.innerHTML = `<span>${now}</span>${text}`;
+  container.insertBefore(entry, container.firstChild);
+}
+
+function renderWordCloud() {
+  const canvas = document.getElementById('wordCloudCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth;
+  const H = canvas.height = 380;
+  ctx.clearRect(0,0,W,H);
+
+  const isDark = nightMode;
+  ctx.fillStyle = isDark ? '#1e1e35' : '#f9f4ff';
+  ctx.fillRect(0,0,W,H);
+
+  const words = Object.entries(wordFrequency).sort((a,b)=>b[1]-a[1]).slice(0,30);
+  if (words.length === 0) {
+    ctx.fillStyle = isDark ? '#9e9ec4' : '#aaa';
+    ctx.font = '15px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('Habla con Therap-IA para ver tu nube de pensamientos', W/2, H/2);
+    return;
+  }
+
+  const maxF = words[0][1];
+  const placed = [];
+  const colors = ['#8e24aa','#6a1b9a','#ab47bc','#ce93d8','#4a148c','#7b1fa2'];
+
+  words.forEach(([word, freq]) => {
+    const size = Math.max(14, Math.min(52, (freq/maxF)*52));
+    ctx.font = `bold ${size}px Segoe UI`;
+    const tw = ctx.measureText(word).width;
+    let placed_ok = false;
+    for (let t=0; t<80; t++) {
+      const x = 20 + Math.random()*(W-tw-40);
+      const y = size + Math.random()*(H-size-20);
+      const overlap = placed.some(p =>
+        x < p.x+p.w+8 && x+tw > p.x-8 && y < p.y+8 && y-size > p.y-p.s-8
+      );
+      if (!overlap) {
+        ctx.fillStyle = colors[Math.floor(Math.random()*colors.length)];
+        ctx.globalAlpha = 0.5 + (freq/maxF)*0.5;
+        ctx.fillText(word, x, y);
+        ctx.globalAlpha = 1;
+        placed.push({x,y,w:tw,s:size,word,freq});
+        placed_ok = true; break;
+      }
+    }
+  });
+
+  // Click en nube
+  canvas.onclick = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (W/rect.width);
+    const my = (e.clientY - rect.top) * (H/rect.height);
+    const hit = placed.find(p => mx>=p.x && mx<=p.x+p.w && my<=p.y && my>=p.y-p.s);
+    if (hit) showWordInsight(hit.word, hit.freq);
+  };
+}
+
+function showWordInsight(word, freq) {
+  const insight = document.getElementById('wordInsight');
+  insight.style.display = 'block';
+  insight.innerHTML = `💬 Has mencionado "<strong>${word}</strong>" ${freq} vez${freq>1?'es':''} en esta sesión. ¿Quieres hablar más sobre esto con Therap-IA?
+    <button onclick="quickChat('Quiero hablar sobre ${word}')" style="margin-left:10px;padding:5px 14px;background:var(--accent-purple);color:white;border:none;border-radius:15px;cursor:pointer;font-size:0.8rem;">Hablar →</button>`;
+}
+
+function quickChat(text) {
+  showView('chat', document.querySelector('.nav-item'));
+  document.querySelector('.nav-item').classList.add('active');
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+// ===== WAVE CANVAS (PROGRESO) =====
+let waveData = [];
+function renderWave() {
+  const canvas = document.getElementById('waveCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth;
+  const H = 80;
+  canvas.height = H;
+  ctx.clearRect(0,0,W,H);
+
+  if (waveData.length < 2) {
+    ctx.fillStyle = nightMode ? '#9e9ec4' : '#ccc';
+    ctx.font = '12px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('Actividad de sesión', W/2, H/2); return;
+  }
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#8e24aa'; ctx.lineWidth = 2;
+  waveData.forEach((v,i) => {
+    const x = (i/(waveData.length-1))*W;
+    const y = H - (v/100)*H;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+  ctx.fillStyle = 'rgba(142,36,170,0.1)'; ctx.fill();
+}
+
+// ===== ZEN MODE =====
+let zenInterval = null;
+let rainBuffer = null;
+
+function openZen() {
+  document.getElementById('zen-overlay').classList.add('active');
+  let phase = 0;
+  const msgs = ['Inhala... 4 segundos','Sostén... 4 segundos','Exhala... 6 segundos'];
+  const durations = [4000,4000,6000];
+  document.getElementById('zen-msg').textContent = msgs[0];
+
+  function nextPhase() {
+    phase = (phase+1) % 3;
+    document.getElementById('zen-msg').textContent = msgs[phase];
+    zenInterval = setTimeout(nextPhase, durations[phase]);
+  }
+  zenInterval = setTimeout(nextPhase, durations[0]);
+
+  // Lluvia con Web Audio
+  if (document.getElementById('soundToggle')?.classList.contains('on')) {
+    playRain();
+  }
+}
+
+function closeZen() {
+  document.getElementById('zen-overlay').classList.remove('active');
+  clearTimeout(zenInterval);
+  stopRain();
+}
+
+function playRain() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i=0; i<bufferSize; i++) data[i] = Math.random()*2-1;
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer; source.loop = true;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = 400;
+    const gain = audioCtx.createGain(); gain.gain.value = 0.06;
+    source.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+    source.start();
+    rainNodes = [source, filter, gain];
+  } catch(e) {}
+}
+
+function stopRain() {
+  rainNodes.forEach(n => { try { n.disconnect(); } catch(_){} });
+  rainNodes = [];
+  if (audioCtx) { try { audioCtx.close(); } catch(_){} audioCtx = null; }
+}
+
+// ===== VOZ =====
+function startVoice() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    alert('Tu navegador no soporta reconocimiento de voz'); return;
+  }
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new Rec(); rec.lang = 'es-ES'; rec.start();
+  rec.onresult = e => {
+    document.getElementById('user-input').value = e.results[0][0].transcript;
+    sendMessage();
+  };
+}
+
+// ===== INIT =====
+window.onload = () => {
+  drawRadar();
+  // Cámara (silencioso si no hay permiso)
+  navigator.mediaDevices?.getUserMedia({video:true})
+    .then(s => document.getElementById('video').srcObject = s)
+    .catch(()=>{});
+  // Actualizar wave cada mensaje
+  const origSend = window.sendMessage;
+  setInterval(() => {
+    if (messageCount > 0) {
+      waveData.push(30 + Math.random()*50);
+      if (waveData.length > 40) waveData.shift();
+    }
+  }, 3000);
+};
+</script>
+</body>
+</html>

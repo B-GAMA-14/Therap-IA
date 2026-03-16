@@ -1,0 +1,52 @@
+# =====================
+# SEGURIDAD - NUNCA subir
+# =====================
+.env
+*.key
+secrets.py
+
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# =====================
+# Entorno virtual
+# =====================
+venv/
+.venv/
+env/
+ENV/
+
+# =====================
+# IDEs
+# =====================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# =====================
+# Sistema operativo
+# =====================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =====================
+# Logs y bases de datos temporales
+# =====================
+*.log
+*.sqlite3
+*.db
+
+# =====================
+# Distribución / Build
+# =====================
+dist/
+build/
+*.egg-info/
