@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🧠 Neuro-Therap / TherapIA
 
 Asistente psicológico con inteligencia artificial basado en terapia cognitivo-conductual (TCC), detección de emociones y apoyo emocional en tiempo real.
@@ -97,3 +98,6 @@ MAX_DAILY_HOURS=3
 - HuggingFace Transformers
 - OpenCV + MediaPipe
 - SpeechRecognition + pyttsx3
+=======
+# Therap-IA
+>>>>>>> c06e120fe932acdf083f91bd3cf5240aaed9fc47
